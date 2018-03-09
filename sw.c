@@ -1,4 +1,7 @@
-/* simple wallet */
+/* See LICENSE file for copyright and license details.
+ *
+ * sw is a simple wallet management tool for the terminal.
+*/
 
 #define _XOPEN_SOURCE
 #include <stdarg.h>
