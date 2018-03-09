@@ -32,7 +32,7 @@ void loadmovs(void);
 void savemovs(void);
 void showmovs(void);
 void sortmovs(void);
-int strfts(char *s);
+int strtots(char *s);
 void usage(void);
 
 /* variables */
@@ -52,7 +52,7 @@ addmov(char *date, float amount, char *note) {
 	++id;
 	m = ecalloc(1, sizeof(Movement));
 	m->id = id;
-	m->ts = strfts(date);
+	m->ts = strtots(date);
 	m->amount = amount;
 	memcpy(m->note, note, sizeof(m->note));
 	m->note[ sizeof(m->note) - 1] = '\0';
@@ -195,7 +195,7 @@ sortmovs(void) {
 }
 
 int
-strfts(char *s) {
+strtots(char *s) {
 	struct tm tm = {0};
 
 	if(!strcmp(s, "now"))
