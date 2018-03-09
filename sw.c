@@ -33,7 +33,7 @@ void *ecalloc(size_t nmemb, size_t size);
 void freemovs(void);
 void loadmovs(void);
 void savemovs(void);
-void showmovs(void);
+void showmovs(int limit);
 void sortmovs(void);
 int strtots(char *s);
 void usage(void);
@@ -165,7 +165,7 @@ savemovs(void) {
 }
 
 void
-showmovs(void) {
+showmovs(int limit) {
 	Movement *m;
 	time_t ts;
 	float tot = 0;
@@ -174,11 +174,13 @@ showmovs(void) {
 
 	printf("%3s | %16s | %8s | %s\n", "id", "date", "amount", "note");
 	for(m = movs; m; m = m->next) {
+		tot += m->amount;
+		++nmovs;
+		if(nmovs > limit)
+			continue;
 		ts = m->ts;
 		strftime(time, sizeof time, "%d/%m/%Y %H:%M", localtime(&ts));
 		printf("%3d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
-		tot += m->amount;
-		++nmovs;
 	}
 	printf("%3s | %17s: %8.2f |\n", "", "Wallet balance", tot);
 	printf("%3s | %17s: %8d |\n", "", "Total movements", nmovs);
@@ -209,18 +211,17 @@ strtots(char *s) {
 
 void
 usage(void) {
-	die("Usage: %s [-v] [-d <id>] [-f <file>] [<date> <amount> <note>]\n", argv0);
+	die("Usage: %s [-v] [-d <id>] [-f <file>] [-l <limit>] [<date> <amount> <note>]\n", argv0);
 }
 
 int
 main(int argc, char *argv[]) {
-	int delid = 0;
+	int delid = 0, limit = 25;
 
 	ARGBEGIN {
 	case 'd': delid = atoi(EARGF(usage())); break;
-	case 'f':
-		snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage()));
-		break;
+	case 'f': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
+	case 'l': limit = atoi(EARGF(usage())); break;
 	case 'v': die("sw-"VERSION"\n");
 	default: usage();
 	} ARGEND;
@@ -248,7 +249,7 @@ main(int argc, char *argv[]) {
 		return 0;
 	}
 	sortmovs();
-	showmovs();
+	showmovs(limit);
 	freemovs();
 	return 0;
 }
