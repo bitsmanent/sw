@@ -1,7 +1,7 @@
 simple wallet
 =============
-sw is a simple wallet management tool which features a simple yet powerful
-interface to keep track of your money movements.
+sw is a wallet management tool which features a simple yet powerful interface
+to keep track of your money movements.
 
 Status
 ======
