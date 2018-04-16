@@ -206,6 +206,7 @@ strtots(char *s) {
 	if(!strcmp(s, "now"))
 		return time(NULL);
 	strptime(s, "%d/%m/%Y %H:%M", &tm);
+	tm.tm_isdst = 0;
 	return mktime(&tm);
 }
 
