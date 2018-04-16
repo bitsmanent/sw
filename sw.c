@@ -201,11 +201,10 @@ sortmovs(void) {
 
 int
 strtots(char *s) {
-	struct tm tm = {0};
+	struct tm tm = {.tm_isdst = - 1};
 
 	if(!strcmp(s, "now"))
 		return time(NULL);
-	tm.tm_isdst = -1;
 	strptime(s, "%d/%m/%Y %H:%M", &tm);
 	return mktime(&tm);
 }
@@ -246,8 +245,6 @@ main(int argc, char *argv[]) {
 			usage();
 		addmov(argv[0], atof(argv[1]), argv[2]);
 		savemovs();
-		freemovs();
-		return 0;
 	}
 	sortmovs();
 	showmovs(limit);
