@@ -213,7 +213,7 @@ strtots(char *s) {
 
 void
 usage(void) {
-	die("Usage: %s [-v] [-d <id>] [-f <file>] [-l <limit>] [<date> <amount> <note>]\n", argv0);
+	die("Usage: %s [-v] [-d <id>] [-i <file>] [-l <limit>] [<date> <amount> <note>]\n", argv0);
 }
 
 int
@@ -222,7 +222,7 @@ main(int argc, char *argv[]) {
 
 	ARGBEGIN {
 	case 'd': delid = atoi(EARGF(usage())); break;
-	case 'f': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
+	case 'i': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
 	case 'l': limit = atoi(EARGF(usage())); break;
 	case 'v': die("sw-"VERSION"\n");
 	default: usage();
