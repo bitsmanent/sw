@@ -1,7 +1,5 @@
 /* See LICENSE file for copyright and license details.
- *
- * sw is a simple wallet management tool for the terminal.
-*/
+ * sw is a simple wallet management tool for the terminal. */
 
 #define _XOPEN_SOURCE
 #include <stdarg.h>
@@ -168,22 +166,26 @@ void
 showmovs(int limit) {
 	Movement *m;
 	time_t ts;
-	float tot = 0;
+	float tot = 0, partial = 0;
 	int nmovs = 0;
 	char time[32];
 
-	printf("%3s | %16s | %8s | %s\n", "id", "date", "amount", "note");
+	if(limit)
+		printf("%3s | %16s | %8s | %s\n", "id", "date  time", "amount", "note");
 	for(m = movs; m; m = m->next) {
 		tot += m->amount;
 		++nmovs;
 		if(nmovs > limit)
 			continue;
 		ts = m->ts;
+		partial += m->amount;
 		strftime(time, sizeof time, "%d/%m/%Y %H:%M", localtime(&ts));
 		printf("%3d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
 	}
-	printf("%3s | %17s: %8.2f |\n", "", "Wallet balance", tot);
-	printf("%3s | %17s: %8d |\n", "", "Total movements", nmovs);
+	if(limit > 1)
+		printf("%3s | %17s: %8.2f | %d movements\n",
+			"", "Partial", partial, nmovs > limit ? limit : nmovs);
+	printf("%3s | %17s: %8.2f | %d movements\n", "", "Total", tot, nmovs);
 }
 
 void
