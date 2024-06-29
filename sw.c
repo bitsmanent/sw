@@ -265,7 +265,7 @@ strtots(char *s) {
 
 void
 usage(void) {
-	die("Usage: %s [-v] [-defilt <arg>] [<date> <amount> <note>]\n", argv0);
+	die("Usage: %s [-v] [-defit <arg>] [-l [limit]] [<date [time]> <amount> <note>]\n", argv0);
 }
 
 int
