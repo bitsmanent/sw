@@ -188,7 +188,7 @@ showmovs(int limit) {
 	char time[32];
 
 	if(limit)
-		printf("%3s | %16s | %8s | %s\n", "id", "date  time", "amount", "note");
+		printf("%5s | %16s | %8s | %s\n", "id", "date  time", "amount", "note");
 	for(m = movs; m; m = m->next) {
 		tot += m->amount;
 		++nmovs;
@@ -198,11 +198,11 @@ showmovs(int limit) {
 		partial += m->amount;
 		++pmovs;
 		strftime(time, sizeof time, "%d/%m/%Y %H:%M", localtime(&ts));
-		printf("%3d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
+		printf("%5d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
 	}
 	if(limit > 1)
-		printf("%3s | %17s: %8.2f | %d movements\n", "", "Partial", partial, pmovs);
-	printf("%3s | %17s: %8.2f | %d movements\n", "", "Total", tot, nmovs);
+		printf("%5s | %17s: %8.2f | %d movements\n", "", "Partial", partial, pmovs);
+	printf("%5s | %17s: %8.2f | %d movements\n", "", "Total", tot, nmovs);
 }
 
 void
