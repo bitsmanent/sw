@@ -241,7 +241,7 @@ showmovs(void) {
 		strftime(time, sizeof time, "%d/%m/%Y %H:%M", localtime(&ts));
 		printf("%5d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
 	}
-	if(listcount > 1)
+	if(listcount > 1 && listcount < totals.count)
 		printf("%5s | %17s: %8.2f | income=%.2f expense=%.2f movements=%d\n", "",
 			"Partial", totals.pamount, totals.pincome, totals.pexpense, totals.pcount);
 	printf("%5s | %17s: %8.2f | income=%.2f expense=%.2f movements=%d\n",
