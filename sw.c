@@ -38,7 +38,7 @@ void deletemov(int id);
 void detach(Movement *m);
 void die(const char *errstr, ...);
 void *ecalloc(size_t nmemb, size_t size);
-void filtermovs(int from, int to, char *txt);
+int filtermovs(int from, int to, char *txt);
 void freemovs(void);
 void loadmovs(void);
 void refresh(void);
@@ -54,6 +54,7 @@ Totals totals;
 FILE *movsfile;
 char movsfilename[256];
 int limit = INT_MAX;
+int filtered = 0;
 
 /* function implementations */
 int
@@ -137,18 +138,22 @@ ecalloc(size_t nmemb, size_t size) {
 	return p;
 }
 
-void
+int
 filtermovs(int from, int to, char *txt) {
 	Movement *m;
+	int nf = 0;
 
 	if(!(from || to || txt))
-		return;
+		return 0;
 	for(m = movs; m; m = m->next) {
 		m->filtered = (txt ? !!strcasestr(m->note, txt) : 1)
 			&& (from ? m->ts >= from : 1)
 			&& (to ? m->ts <= to : 1)
 			? 0 : 1;
+		if(m->filtered)
+			++nf;
 	}
+	return nf;
 }
 
 void
@@ -220,20 +225,23 @@ showmovs(void) {
 	Movement *m;
 	time_t ts;
 	char time[32];
-	int showpartials = limit < totals.count ? 1 : 0;
+	int listcount = totals.count - filtered;
 	int count = 0;
 
-	if(limit >= 1 && showpartials)
+	if(limit < listcount)
+		listcount = limit;
+
+	if(listcount)
 		printf("%5s | %16s | %8s | %s\n", "id", "date  time", "amount", "note");
-	for(m = movs; m; m = m->next) {
-		if(m->filtered || count >= limit)
+	for(m = movs; m && count < limit; m = m->next) {
+		if(m->filtered)
 			continue;
 		++count;
 		ts = m->ts;
 		strftime(time, sizeof time, "%d/%m/%Y %H:%M", localtime(&ts));
 		printf("%5d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
 	}
-	if(limit > 1 && showpartials)
+	if(listcount > 1)
 		printf("%5s | %17s: %8.2f | income=%.2f expense=%.2f movements=%d\n", "",
 			"Partial", totals.pamount, totals.pincome, totals.pexpense, totals.pcount);
 	printf("%5s | %17s: %8.2f | income=%.2f expense=%.2f movements=%d\n",
@@ -310,7 +318,7 @@ main(int argc, char *argv[]) {
 		addmov(argv[0], atof(argv[1]), argv[2]);
 		savemovs();
 	}
-	filtermovs(from, to, txt);
+	filtered = filtermovs(from, to, txt);
 	sortmovs();
 	refresh();
 	showmovs();
