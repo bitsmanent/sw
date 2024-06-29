@@ -199,6 +199,9 @@ refresh(void) {
 			totals.expense += m->amount;
 		++totals.count;
 
+		if(m->filtered)
+			continue;
+
 		if(totals.pcount >= limit)
 			continue;
 		totals.pamount += m->amount;
