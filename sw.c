@@ -2,6 +2,7 @@
  * sw is a simple wallet management tool for the terminal. */
 
 #define _XOPEN_SOURCE
+#define _GNU_SOURCE
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,7 @@ typedef struct Movement Movement;
 struct Movement {
 	int id;
 	int ts;
+	int filtered;
 	float amount;
 	char note[64];
 	Movement *next;
@@ -28,6 +30,7 @@ void deletemov(int id);
 void detach(Movement *m);
 void die(const char *errstr, ...);
 void *ecalloc(size_t nmemb, size_t size);
+void filtermovs(char *from, char *to, char *txt);
 void freemovs(void);
 void loadmovs(void);
 void savemovs(void);
@@ -124,6 +127,23 @@ ecalloc(size_t nmemb, size_t size) {
 }
 
 void
+filtermovs(char *from, char *to, char *txt) {
+	Movement *m;
+
+	if(!(from || to || txt))
+		return;
+
+	if(from) printf("filtermovs(): from not yet implemented.\n");
+	if(to) printf("filtermovs(): to not yet implemented.\n");
+
+	printf("Filter by: from:%s, to:%s, text:%s\n", from ? "Y" : "N", to ? "Y" : "N", txt ? "Y" : "N");
+	for(m = movs; m; m = m->next) {
+		if(txt)
+			m->filtered = strcasestr(m->note, txt) ? 0 : 1;
+	}
+}
+
+void
 freemovs(void) {
 	Movement *m;
 
@@ -167,7 +187,7 @@ showmovs(int limit) {
 	Movement *m;
 	time_t ts;
 	float tot = 0, partial = 0;
-	int nmovs = 0;
+	int nmovs = 0, pmovs = 0;
 	char time[32];
 
 	if(limit)
@@ -175,16 +195,16 @@ showmovs(int limit) {
 	for(m = movs; m; m = m->next) {
 		tot += m->amount;
 		++nmovs;
-		if(nmovs > limit)
+		if(nmovs > limit || m->filtered)
 			continue;
 		ts = m->ts;
 		partial += m->amount;
+		++pmovs;
 		strftime(time, sizeof time, "%d/%m/%Y %H:%M", localtime(&ts));
 		printf("%3d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
 	}
 	if(limit > 1)
-		printf("%3s | %17s: %8.2f | %d movements\n",
-			"", "Partial", partial, nmovs > limit ? limit : nmovs);
+		printf("%3s | %17s: %8.2f | %d movements\n", "", "Partial", partial, pmovs);
 	printf("%3s | %17s: %8.2f | %d movements\n", "", "Total", tot, nmovs);
 }
 
@@ -213,17 +233,21 @@ strtots(char *s) {
 
 void
 usage(void) {
-	die("Usage: %s [-v] [-d <id>] [-i <file>] [-l <limit>] [<date> <amount> <note>]\n", argv0);
+	die("Usage: %s [-v] [-defilt <arg>] [<date> <amount> <note>]\n", argv0);
 }
 
 int
 main(int argc, char *argv[]) {
 	int delid = 0, limit = 25;
+	char *from = NULL, *to = NULL, *txt = NULL;
 
 	ARGBEGIN {
 	case 'd': delid = atoi(EARGF(usage())); break;
+	case 'e': txt = EARGF(usage()); break;
+	case 'f': from = EARGF(usage()); break;
 	case 'i': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
 	case 'l': limit = atoi(EARGF(usage())); break;
+	case 't': to = EARGF(usage()); break;
 	case 'v': die("sw-"VERSION"\n");
 	default: usage();
 	} ARGEND;
@@ -248,6 +272,7 @@ main(int argc, char *argv[]) {
 		addmov(argv[0], atof(argv[1]), argv[2]);
 		savemovs();
 	}
+	filtermovs(from, to, txt);
 	sortmovs();
 	showmovs(limit);
 	freemovs();
