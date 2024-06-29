@@ -184,26 +184,37 @@ void
 showmovs(int limit) {
 	Movement *m;
 	time_t ts;
-	float tot = 0, partial = 0;
+	float tot = 0, partial = 0, in = 0, ex = 0, pin = 0, pex = 0;
 	int nmovs = 0, pmovs = 0;
 	char time[32];
 
 	if(limit)
 		printf("%5s | %16s | %8s | %s\n", "id", "date  time", "amount", "note");
 	for(m = movs; m; m = m->next) {
-		tot += m->amount;
 		++nmovs;
+		tot += m->amount;
+		if(m->amount >= 0)
+			in += m->amount;
+		else
+			ex += m->amount;
 		if(pmovs >= limit || m->filtered)
 			continue;
 		ts = m->ts;
-		partial += m->amount;
 		++pmovs;
+		partial += m->amount;
+		if(m->amount >= 0)
+			pin += m->amount;
+		else
+			pex += m->amount;
 		strftime(time, sizeof time, "%d/%m/%Y %H:%M", localtime(&ts));
 		printf("%5d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
 	}
-	if(limit > 1)
-		printf("%5s | %17s: %8.2f | %d movements\n", "", "Partial", partial, pmovs);
-	printf("%5s | %17s: %8.2f | %d movements\n", "", "Total", tot, nmovs);
+	if(limit > 1) {
+		printf("%5s | %17s: %8.2f | income=%.2f expenses=%.2f movements=%d\n", "",
+			"Partial", partial, pin, pex, pmovs);
+	}
+	printf("%5s | %17s: %8.2f | income=%.2f expenses=%.2f movements=%d\n",
+		"", "Total", tot, in, ex, nmovs);
 }
 
 void
