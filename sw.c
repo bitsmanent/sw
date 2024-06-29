@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 
 #include "arg.h"
 char *argv0;
@@ -235,7 +236,7 @@ usage(void) {
 
 int
 main(int argc, char *argv[]) {
-	int delid = 0, limit = 25;
+	int delid = 0, limit = INT_MAX;
 	int from = 0, to = 0;
 	char *txt = NULL;
 
