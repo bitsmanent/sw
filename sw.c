@@ -23,6 +23,13 @@ struct Movement {
 	Movement *next;
 };
 
+typedef struct {
+	float amount, pamount;
+	float income, pincome;
+	float expense, pexpense;
+	int count, pcount;
+} Totals;
+
 /* function declarations */
 int addmov(char *date, float amount, char *note);
 void attach(Movement *m);
@@ -34,16 +41,19 @@ void *ecalloc(size_t nmemb, size_t size);
 void filtermovs(int from, int to, char *txt);
 void freemovs(void);
 void loadmovs(void);
+void refresh(void);
 void savemovs(void);
-void showmovs(int limit);
+void showmovs(void);
 void sortmovs(void);
 int strtots(char *s);
 void usage(void);
 
 /* variables */
 Movement *movs;
+Totals totals;
 FILE *movsfile;
 char movsfilename[256];
+int limit = INT_MAX;
 
 /* function implementations */
 int
@@ -171,6 +181,31 @@ loadmovs(void) {
 }
 
 void
+refresh(void) {
+	Movement *m;
+
+	totals.amount = totals.income = totals.expense = totals.count = 0;
+	totals.pamount = totals.pincome = totals.pexpense = totals.pcount = 0;
+	for(m = movs; m; m = m->next) {
+		totals.amount += m->amount;
+		if(m->amount >= 0)
+			totals.income += m->amount;
+		else
+			totals.expense += m->amount;
+		++totals.count;
+
+		if(totals.pcount >= limit)
+			continue;
+		totals.pamount += m->amount;
+		if(m->amount >= 0)
+			totals.pincome += m->amount;
+		else
+			totals.pexpense += m->amount;
+		++totals.pcount;
+	}
+}
+
+void
 savemovs(void) {
 	Movement *m;
 
@@ -181,40 +216,28 @@ savemovs(void) {
 }
 
 void
-showmovs(int limit) {
+showmovs(void) {
 	Movement *m;
 	time_t ts;
-	float tot = 0, partial = 0, in = 0, ex = 0, pin = 0, pex = 0;
-	int nmovs = 0, pmovs = 0;
 	char time[32];
+	int showpartials = limit < totals.count ? 1 : 0;
+	int count = 0;
 
-	if(limit)
+	if(limit >= 1 && showpartials)
 		printf("%5s | %16s | %8s | %s\n", "id", "date  time", "amount", "note");
 	for(m = movs; m; m = m->next) {
-		++nmovs;
-		tot += m->amount;
-		if(m->amount >= 0)
-			in += m->amount;
-		else
-			ex += m->amount;
-		if(pmovs >= limit || m->filtered)
+		if(m->filtered || count >= limit)
 			continue;
+		++count;
 		ts = m->ts;
-		++pmovs;
-		partial += m->amount;
-		if(m->amount >= 0)
-			pin += m->amount;
-		else
-			pex += m->amount;
 		strftime(time, sizeof time, "%d/%m/%Y %H:%M", localtime(&ts));
 		printf("%5d | %16s | %8.2f | %s\n", m->id, time, m->amount, m->note);
 	}
-	if(limit > 1) {
-		printf("%5s | %17s: %8.2f | income=%.2f expenses=%.2f movements=%d\n", "",
-			"Partial", partial, pin, pex, pmovs);
-	}
-	printf("%5s | %17s: %8.2f | income=%.2f expenses=%.2f movements=%d\n",
-		"", "Total", tot, in, ex, nmovs);
+	if(limit > 1 && showpartials)
+		printf("%5s | %17s: %8.2f | income=%.2f expense=%.2f movements=%d\n", "",
+			"Partial", totals.pamount, totals.pincome, totals.pexpense, totals.pcount);
+	printf("%5s | %17s: %8.2f | income=%.2f expense=%.2f movements=%d\n",
+		"", "Total", totals.amount, totals.income, totals.expense, totals.count);
 }
 
 void
@@ -247,16 +270,21 @@ usage(void) {
 
 int
 main(int argc, char *argv[]) {
-	int delid = 0, limit = INT_MAX;
+	int delid = 0;
 	int from = 0, to = 0;
 	char *txt = NULL;
+	char *num;
 
 	ARGBEGIN {
 	case 'd': delid = atoi(EARGF(usage())); break;
 	case 'e': txt = EARGF(usage()); break;
 	case 'f': from = strtots(EARGF(usage())); break;
 	case 'i': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
-	case 'l': limit = atoi(EARGF(usage())); break;
+	case 'l':
+		//limit = atoi(EARGF(usage()));
+		num = ARGF();
+		limit = num ? atoi(num) : 25;
+		break;
 	case 't': to = strtots(EARGF(usage())); break;
 	case 'v': die("sw-"VERSION"\n");
 	default: usage();
@@ -284,7 +312,8 @@ main(int argc, char *argv[]) {
 	}
 	filtermovs(from, to, txt);
 	sortmovs();
-	showmovs(limit);
+	refresh();
+	showmovs();
 	freemovs();
 	return 0;
 }

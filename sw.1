@@ -3,7 +3,7 @@
 sw \- simple wallet
 .SH SYNOPSIS
 .B sw
-.RB [ \-v ]\ [ \-defilt \ <arg>]\ [<date>\ <amount>\ <note>]
+.RB [ \-v ]\ [ \-defit \ <arg>]\ [ \-l \ [arg] ]\ [<date>\ <amount>\ <note>]
 .SH DESCRIPTION
 sw is a simple wallet management tool which features a simple yet powerful
 interface to keep track of your money movements.
@@ -18,5 +18,6 @@ remove the specified movement, then exits.
 .B \-f\ <file>
 use the given file as movements database.
 .TP
-.B \-l\ <limit>
-limit the number of movements in the listing.
+.B \-l\ [limit]
+limit the number of movements in the listing. In no argument is specified then
+assume a value of 25.
