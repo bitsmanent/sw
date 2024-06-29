@@ -30,7 +30,7 @@ void deletemov(int id);
 void detach(Movement *m);
 void die(const char *errstr, ...);
 void *ecalloc(size_t nmemb, size_t size);
-void filtermovs(char *from, char *to, char *txt);
+void filtermovs(int from, int to, char *txt);
 void freemovs(void);
 void loadmovs(void);
 void savemovs(void);
@@ -127,19 +127,16 @@ ecalloc(size_t nmemb, size_t size) {
 }
 
 void
-filtermovs(char *from, char *to, char *txt) {
+filtermovs(int from, int to, char *txt) {
 	Movement *m;
 
 	if(!(from || to || txt))
 		return;
-
-	if(from) printf("filtermovs(): from not yet implemented.\n");
-	if(to) printf("filtermovs(): to not yet implemented.\n");
-
-	printf("Filter by: from:%s, to:%s, text:%s\n", from ? "Y" : "N", to ? "Y" : "N", txt ? "Y" : "N");
 	for(m = movs; m; m = m->next) {
-		if(txt)
-			m->filtered = strcasestr(m->note, txt) ? 0 : 1;
+		m->filtered = (txt ? !!strcasestr(m->note, txt) : 1)
+			&& (from ? m->ts >= from : 1)
+			&& (to ? m->ts <= to : 1)
+			? 0 : 1;
 	}
 }
 
@@ -195,7 +192,7 @@ showmovs(int limit) {
 	for(m = movs; m; m = m->next) {
 		tot += m->amount;
 		++nmovs;
-		if(nmovs > limit || m->filtered)
+		if(pmovs >= limit || m->filtered)
 			continue;
 		ts = m->ts;
 		partial += m->amount;
@@ -239,15 +236,16 @@ usage(void) {
 int
 main(int argc, char *argv[]) {
 	int delid = 0, limit = 25;
-	char *from = NULL, *to = NULL, *txt = NULL;
+	int from = 0, to = 0;
+	char *txt = NULL;
 
 	ARGBEGIN {
 	case 'd': delid = atoi(EARGF(usage())); break;
 	case 'e': txt = EARGF(usage()); break;
-	case 'f': from = EARGF(usage()); break;
+	case 'f': from = strtots(EARGF(usage())); break;
 	case 'i': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
 	case 'l': limit = atoi(EARGF(usage())); break;
-	case 't': to = EARGF(usage()); break;
+	case 't': to = strtots(EARGF(usage())); break;
 	case 'v': die("sw-"VERSION"\n");
 	default: usage();
 	} ARGEND;
