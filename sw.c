@@ -13,6 +13,15 @@
 #include "arg.h"
 char *argv0;
 
+enum {F_DATEFROM, F_DATETO, F_TEXT};
+
+typedef union {
+	int i;
+	unsigned int ui;
+	float f;
+	const void *v;
+} Arg;
+
 typedef struct Movement Movement;
 struct Movement {
 	int id;
@@ -30,16 +39,28 @@ typedef struct {
 	int count, pcount;
 } Totals;
 
+typedef struct Filter Filter;
+struct Filter {
+	int type;
+	Arg arg;
+	Filter *next;
+};
+
 /* function declarations */
 int addmov(char *date, float amount, char *note);
+void addfilter(unsigned int type, void *data);
 void attach(Movement *m);
+void attachfltr(Filter *f);
 void attach_sorted_desc(Movement **head, Movement *m);
 void deletemov(int id);
 void detach(Movement *m);
+void detachfltr(Filter *f);
 void die(const char *errstr, ...);
 void *ecalloc(size_t nmemb, size_t size);
+int filtermov(Movement *mov);
 int filtermovs(int from, int to, char *txt);
 void freemovs(void);
+void freefltrs(void);
 void loadmovs(void);
 void refresh(void);
 void savemovs(void);
@@ -50,11 +71,13 @@ void usage(void);
 
 /* variables */
 Movement *movs;
+Filter *filters;
 Totals totals;
 FILE *movsfile;
 char movsfilename[256];
 int limit = INT_MAX;
 int filtered = 0;
+int nfilters = 0;
 
 /* function implementations */
 int
@@ -77,9 +100,30 @@ addmov(char *date, float amount, char *note) {
 }
 
 void
+addfilter(unsigned int type, void *data) {
+	Filter *f = ecalloc(1, sizeof(Filter));
+
+	switch(type) {
+	case F_TEXT: f->arg.v = data; break;
+	case F_DATEFROM: f->arg.i = strtots(data); break;
+	case F_DATETO: f->arg.i = strtots(data); break;
+	default: die("invalid filter type\n", type);
+	}
+
+	f->type = type;
+	attachfltr(f);
+}
+
+void
 attach(Movement *m) {
 	m->next = movs;
 	movs = m;
+}
+
+void
+attachfltr(Filter *f) {
+	f->next = filters;
+	filters = f;
 }
 
 void
@@ -120,6 +164,14 @@ detach(Movement *m) {
 }
 
 void
+detachfltr(Filter *f) {
+	Filter **tf;
+
+	for (tf = &filters; *tf && *tf != f; tf = &(*tf)->next);
+	*tf = f->next;
+}
+
+void
 die(const char *errstr, ...) {
 	va_list ap;
 
@@ -139,21 +191,40 @@ ecalloc(size_t nmemb, size_t size) {
 }
 
 int
+filtermov(Movement *m) {
+	Filter *f;
+	int ormatch = -1;
+
+	for(f = filters; f; f = f->next) {
+		switch(f->type) {
+		case F_TEXT:
+			if(ormatch > 0)
+				break;
+			ormatch = !!strcasestr(m->note, (char *)f->arg.v);
+			break;
+		case F_DATEFROM:
+			if(!(m->ts >= f->arg.i))
+				return 1;
+			break;
+		case F_DATETO:
+			if(!(m->ts <= f->arg.i))
+				return 1;
+			break;
+		}
+	}
+	return ormatch == -1 ? 0 : !ormatch;
+}
+
+int
 filtermovs(int from, int to, char *txt) {
 	Movement *m;
-	int nf = 0;
+	int n = 0;
 
-	if(!(from || to || txt))
-		return 0;
 	for(m = movs; m; m = m->next) {
-		m->filtered = (txt ? !!strcasestr(m->note, txt) : 1)
-			&& (from ? m->ts >= from : 1)
-			&& (to ? m->ts <= to : 1)
-			? 0 : 1;
-		if(m->filtered)
-			++nf;
+		m->filtered = filtermov(m);
+		n += m->filtered;
 	}
-	return nf;
+	return n;
 }
 
 void
@@ -164,6 +235,17 @@ freemovs(void) {
 		m = movs;
 		detach(m);
 		free(m);
+	}
+}
+
+void
+freefltrs(void) {
+	Filter *f;
+
+	while(filters) {
+		f = filters;
+		detachfltr(f);
+		free(f);
 	}
 }
 
@@ -276,7 +358,7 @@ strtots(char *s) {
 
 void
 usage(void) {
-	die("Usage: %s [-v] [-defit <arg>] [-l [limit]] [<date [time]> <amount> <note>]\n", argv0);
+	die("Usage: %s [-v] [-dfit <arg>] [-e <text> ...] [-l [limit]] [<date [time]> <amount> <note>]\n", argv0);
 }
 
 int
@@ -288,15 +370,14 @@ main(int argc, char *argv[]) {
 
 	ARGBEGIN {
 	case 'd': delid = atoi(EARGF(usage())); break;
-	case 'e': txt = EARGF(usage()); break;
-	case 'f': from = strtots(EARGF(usage())); break;
+	case 'e': addfilter(F_TEXT, EARGF(usage())); break;
+	case 'f': addfilter(F_DATEFROM, EARGF(usage())); break;
 	case 'i': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
 	case 'l':
-		//limit = atoi(EARGF(usage()));
 		num = ARGF();
 		limit = num ? atoi(num) : 25;
 		break;
-	case 't': to = strtots(EARGF(usage())); break;
+	case 't': addfilter(F_DATETO, EARGF(usage())); break;
 	case 'v': die("sw-"VERSION"\n");
 	default: usage();
 	} ARGEND;
@@ -313,6 +394,7 @@ main(int argc, char *argv[]) {
 		deletemov(delid);
 		savemovs();
 		freemovs();
+		freefltrs(); /* Only for coherence. We should check incompatible flags anyway */ 
 		return 0;
 	}
 	if(argc) {
@@ -326,5 +408,6 @@ main(int argc, char *argv[]) {
 	refresh();
 	showmovs();
 	freemovs();
+	freefltrs();
 	return 0;
 }
