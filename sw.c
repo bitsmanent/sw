@@ -438,6 +438,7 @@ main(int argc, char *argv[]) {
 			usage();
 		addmov(argv[0], atof(argv[1]), argv[2]);
 		savemovs();
+		return 0;
 	}
 	filtered = filtermovs(from, to, txt);
 	sortmovs();
