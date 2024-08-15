@@ -3,6 +3,7 @@
 
 #define _XOPEN_SOURCE
 #define _GNU_SOURCE
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,6 +67,7 @@ void refresh(void);
 void savemovs(void);
 void showmovs(void);
 void sortmovs(void);
+int strtoint(char *s);
 int strtots(char *s);
 void usage(void);
 
@@ -347,6 +349,17 @@ sortmovs(void) {
 }
 
 int
+strtoint(char *s) {
+	long n;
+	char *ep;
+
+	n = strtol(s, &ep, 10);
+	if(s == ep || *ep != '\0' || n == LONG_MIN || n == LONG_MAX)
+		return -1;
+	return (int)n;
+}
+
+int
 strtots(char *s) {
 	struct tm tm = {.tm_isdst = - 1};
 
@@ -373,7 +386,9 @@ main(int argc, char *argv[]) {
 	case 'f': addfilter(F_DATEFROM, EARGF(usage())); break;
 	case 'i': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
 	case 'l':
-		  limit = atoi(EARGF(usage()));
+		  limit = strtoint(EARGF(usage()));
+		  if(limit < 0)
+			  die("%s: -l: invalid argument\n", argv0);
 		  if(!limit)
 			  limit = INT_MAX;
 		  break;
