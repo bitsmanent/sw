@@ -387,19 +387,29 @@ int
 main(int argc, char *argv[]) {
 	int delid = 0;
 	int from = 0, to = 0;
+	int lflag = 0;
 	char *txt = NULL;
 
 	ARGBEGIN {
 	case 'd': delid = atoi(EARGF(usage())); break;
 	case 'e': addfilter(F_TEXT, EARGF(usage())); break;
-	case 'f': addfilter(F_DATEFROM, EARGF(usage())); limit = 0; break;
+	case 'f':
+		  addfilter(F_DATEFROM, EARGF(usage()));
+		  if(!lflag)
+			  limit = 0;
+		  break;
 	case 'i': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
 	case 'l':
+		  lflag = 1;
 		  limit = strtoint(EARGF(usage()));
 		  if(limit < 0)
 			  die("%s: -l: invalid argument\n", argv0);
 		  break;
-	case 't': addfilter(F_DATETO, EARGF(usage())); limit = 0; break;
+	case 't':
+		  addfilter(F_DATETO, EARGF(usage()));
+		  if(!lflag)
+			  limit = 0;
+		  break;
 	case 'v': die("sw-"VERSION"\n");
 	case 'x': addfilter(F_NOTEXT, EARGF(usage())); break;
 	default: usage();
