@@ -3,7 +3,7 @@
 sw \- simple wallet
 .SH SYNOPSIS
 .B sw
-.RB [ \-v ]\ [ \-dfit \ <arg>]\ [ \-e \ <text>\ ...]\ [ \-l \ <limit>]\ [<date\ [time]\>\ <amount>\ <note>]
+.RB [ \-v ]\ [ \-defiltx \ <arg>]\  [<date\ [time]\>\ <amount>\ <note>]
 .SH DESCRIPTION
 sw is a wallet management tool which features a simple yet powerful interface
 to keep track of your money movements. By default (e.g. if no -l is specified)
@@ -32,4 +32,7 @@ a value of INT_MAX (show all movements).
 .TP
 .B \-t\ <date\ [time]>
 consider only movements before the given date and optional time
-
+.TP
+.B \-x\ <text>
+exclude all movements that include the given string (case insensitive). May
+be specified multiple times.

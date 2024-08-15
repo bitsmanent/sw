@@ -3,7 +3,6 @@
 
 #define _XOPEN_SOURCE
 #define _GNU_SOURCE
-#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +13,7 @@
 #include "arg.h"
 char *argv0;
 
-enum {F_DATEFROM, F_DATETO, F_TEXT};
+enum {F_DATEFROM, F_DATETO, F_TEXT, F_NOTEXT};
 
 typedef union {
 	int i;
@@ -106,9 +105,14 @@ addfilter(unsigned int type, void *data) {
 	Filter *f = ecalloc(1, sizeof(Filter));
 
 	switch(type) {
-	case F_TEXT: f->arg.v = data; break;
-	case F_DATEFROM: f->arg.i = strtots(data); break;
-	case F_DATETO: f->arg.i = strtots(data); break;
+	case F_TEXT:
+	case F_NOTEXT:
+		f->arg.v = data;
+		break;
+	case F_DATEFROM:
+	case F_DATETO:
+		f->arg.i = strtots(data);
+		break;
 	default: die("invalid filter type\n", type);
 	}
 
@@ -204,6 +208,10 @@ filtermov(Movement *m) {
 				break;
 			ormatch = !!strcasestr(m->note, (char *)f->arg.v);
 			break;
+		case F_NOTEXT:
+			if(!!strcasestr(m->note, (char *)f->arg.v))
+				return 1;
+			break;
 		case F_DATEFROM:
 			if(!(m->ts >= f->arg.i))
 				return 1;
@@ -214,6 +222,7 @@ filtermov(Movement *m) {
 			break;
 		}
 	}
+
 	return ormatch == -1 ? 0 : !ormatch;
 }
 
@@ -371,7 +380,7 @@ strtots(char *s) {
 
 void
 usage(void) {
-	die("Usage: %s [-v] [-dfit <arg>] [-e <text> ...] [-l <limit>] [<date [time]> <amount> <note>]\n", argv0);
+	die("Usage: %s [-v] [-defiltx <arg>] [<date [time]> <amount> <note>]\n", argv0);
 }
 
 int
@@ -389,13 +398,15 @@ main(int argc, char *argv[]) {
 		  limit = strtoint(EARGF(usage()));
 		  if(limit < 0)
 			  die("%s: -l: invalid argument\n", argv0);
-		  if(!limit)
-			  limit = INT_MAX;
 		  break;
 	case 't': addfilter(F_DATETO, EARGF(usage())); break;
 	case 'v': die("sw-"VERSION"\n");
+	case 'x': addfilter(F_NOTEXT, EARGF(usage())); break;
 	default: usage();
 	} ARGEND;
+
+	if(!limit)
+		limit = INT_MAX;
 
 	if(!*movsfilename)
 		snprintf(movsfilename, sizeof movsfilename, "%s/%s", getenv("HOME"), ".sw");
