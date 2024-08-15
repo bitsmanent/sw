@@ -28,7 +28,6 @@ extern char *argv0;
 						break;\
 					argc_ = argv[0][0];\
 					switch (argc_)
-
 #define ARGEND			}\
 			}
 
@@ -37,11 +36,4 @@ extern char *argv0;
 				(brk_ = 1, (argv[0][1] != '\0')?\
 					(&argv[0][1]) :\
 					(argc--, argv++, argv[0])))
-
-#define ARGF()		((argv[0][1] == '\0' && argv[1] == NULL)?\
-				(char *)0 :\
-				(brk_ = 1, (argv[0][1] != '\0')?\
-					(&argv[0][1]) :\
-					(argc--, argv++, argv[0])))
-
 #endif

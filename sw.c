@@ -75,7 +75,7 @@ Filter *filters;
 Totals totals;
 FILE *movsfile;
 char movsfilename[256];
-int limit = INT_MAX;
+int limit = 25;
 int filtered = 0;
 int nfilters = 0;
 
@@ -358,7 +358,7 @@ strtots(char *s) {
 
 void
 usage(void) {
-	die("Usage: %s [-v] [-dfit <arg>] [-e <text> ...] [-l [limit]] [<date [time]> <amount> <note>]\n", argv0);
+	die("Usage: %s [-v] [-dfit <arg>] [-e <text> ...] [-l <limit>] [<date [time]> <amount> <note>]\n", argv0);
 }
 
 int
@@ -366,7 +366,6 @@ main(int argc, char *argv[]) {
 	int delid = 0;
 	int from = 0, to = 0;
 	char *txt = NULL;
-	char *num;
 
 	ARGBEGIN {
 	case 'd': delid = atoi(EARGF(usage())); break;
@@ -374,9 +373,10 @@ main(int argc, char *argv[]) {
 	case 'f': addfilter(F_DATEFROM, EARGF(usage())); break;
 	case 'i': snprintf(movsfilename, sizeof movsfilename, "%s", EARGF(usage())); break;
 	case 'l':
-		num = ARGF();
-		limit = num ? atoi(num) : 25;
-		break;
+		  limit = atoi(EARGF(usage()));
+		  if(!limit)
+			  limit = INT_MAX;
+		  break;
 	case 't': addfilter(F_DATETO, EARGF(usage())); break;
 	case 'v': die("sw-"VERSION"\n");
 	default: usage();
